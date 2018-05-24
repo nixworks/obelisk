@@ -44,10 +44,9 @@ run = do
     putLog Warning $ T.pack $ "Failed to find pkgs in " <> intercalate ", " pkgDirErrs
   let dotGhci = unlines
         [ ":set -i" <> intercalate ":" (mconcat hsSrcDirs)
-        , ":add Backend Frontend"
-        , ":module + Obelisk.Run Frontend Backend"
+        , ":load ./devel/Devel.hs" -- TODO more robust filepath
         ]
-      testCmd = unwords ["Obelisk.Run.run", show freePort , "backend", "frontend"]
+      testCmd = unwords ["main", show freePort]
   withSystemTempDirectory "ob-ghci" $ \fp -> do
     let dotGhciPath = fp </> ".ghci"
     liftIO $ do
