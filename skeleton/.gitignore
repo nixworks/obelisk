@@ -2,5 +2,6 @@ dist-newstyle
 result
 result-android
 result-ios
+result-localServer
 .attr-cache
 ghcid-output.txt

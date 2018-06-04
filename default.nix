@@ -297,11 +297,14 @@ rec {
                 };
               };
           in mkProject (projectDefinition args));
-      exe = serverExe (projectOut "x86_64-linux").ghc.backend (projectOut system).ghcjs.frontend assets.symlinked configPath;
+      serverOn = sys:
+        serverExe (projectOut sys).ghc.backend (projectOut system).ghcjs.frontend assets.symlinked configPath;
+      linuxServer = serverOn "x86_64-linux";
     in projectOut system // {
-      inherit exe;
-      server = { hostName }: server exe hostName;
-      obelisk = import (base + "/.obelisk/impl") {};
+      inherit linuxServer;
+      localServer = serverOn system;
+      server = { hostName }: server linuxServer hostName;
+      obelisk = import (base + /.obelisk/impl) {};
     };
   haskellPackageSets = {
     ghc = reflex-platform.ghc.override {

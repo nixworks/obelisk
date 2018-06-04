@@ -5,6 +5,8 @@ Obelisk provides an easy way to develop and deploy your [Reflex](https://github.
 - [Installing Obelisk](#installing-obelisk)
 - [Developing an Obelisk project](#developing-an-obelisk-project)
 - [Deploying](#deploying)
+  - [Locally](#locally)
+  - [EC2](#ec2)
 - [Mobile](#mobile)
   - [iOS](#ios)
   - [Android](#android)
@@ -89,6 +91,23 @@ Now go to http://localhost:8000 (or the port specified in `config/common/route`)
 Every time you change the Haskell source files in frontend, common or backend, `ob run` will automatically recompile the modified files and reload the server. Furthermore, it will display on screen compilation errors and warnings if any.
 
 ## Deploying
+
+### Locally
+
+Build everything:
+
+```
+nix-build -A localServer -o result-localServer
+```
+
+Run the server:
+
+```
+cd result-localServer
+./backend
+```
+
+### EC2
 
 In this section we will demonstrate how to deploy your Obelisk app to an Amazon EC2 instance.
 
