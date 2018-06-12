@@ -1,0 +1,8 @@
+There are no changes required for the source project. However you must make a few changes to your deployment repository. To do this, simply run these commands (change email and URL accordingly):
+
+echo True > enable_https
+echo admin@yoursite.com > admin_email
+echo https://yoursite.com/ > config/common/route
+git add admin_email config/common/route && git commit -m "Upgrade obelisk [https support]"
+ob deploy push
+
