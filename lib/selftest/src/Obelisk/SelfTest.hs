@@ -96,7 +96,7 @@ main = do
           inProj = shelly_ . chdir (fromString blankProject)
 
           inTmp :: (Shelly.FilePath -> Sh a) -> IO ()
-          inTmp f = void . shelly_ . withSystemTempDirectory "ob-init" $ (chdir <*> f) . fromString
+          inTmp f = shelly_ . withSystemTempDirectory "ob-init" $ (chdir <*> f) . fromString
 
           assertRevEQ a b = liftIO . assertEqual "" ""        =<< diff a b
           assertRevNE a b = liftIO . assertBool  "" . (/= "") =<< diff a b
@@ -104,7 +104,7 @@ main = do
           revParseHead = T.strip <$> run "git" ["rev-parse", "HEAD"]
 
           commitAll = do
-            void $ run "git" ["add", "."]
+            run_ "git" ["add", "."]
             commit "checkpoint"
             revParseHead
 
@@ -125,16 +125,15 @@ main = do
           ls tmp >>= liftIO . assertEqual "" []
 
         it "produces a valid route config" $ inTmp $ \tmp -> do
-          out <- run "ob" ["init"]
+          run_ "ob" ["init"]
           liftIO $ withCurrentDirectory (T.unpack $ toTextIgnore tmp) $ getConfigRoute `shouldNotReturn` Nothing
-          pure out
 
       describe "ob run" $ do
         it "works in root directory" $ inTmp $ \_ -> do
-          void $ run "ob" ["init"]
+          run_ "ob" ["init"]
           testObRunInDir Nothing httpManager
         it "works in sub directory" $ inTmp $ \_ -> do
-          void $ run "ob" ["init"]
+          run_ "ob" ["init"]
           testObRunInDir (Just "frontend") httpManager
 
       describe "obelisk project" $ parallel $ do
@@ -146,8 +145,8 @@ main = do
 
       describe "blank initialized project" $ do
         it "can be created" $ inProj $ do
-          void $ run "ob" ["init"]
-          void $ run "git" ["init"]
+          run_ "ob" ["init"]
+          run_ "git" ["init"]
           commitAll
 
         it "can build ghc.backend" $ inProj $ do
