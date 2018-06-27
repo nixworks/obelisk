@@ -73,7 +73,7 @@ shellyOb f obTest = shelly $ f $ do
     if T.isInfixOf "export NIX_REMOTE" obStderr
       then do
       runCli $ do
-        putLog Notice "Detected NIX_REMOTE suggestion in stderr of failed ob run"
+        putLog Notice "Detected NIX_REMOTE suggestion in stderr of failed ob"
         putLog Warning "Retrying this test with NIX_REMOTE=daemon"
       setenv "NIX_REMOTE" "daemon"
       f obTest
@@ -186,15 +186,15 @@ main = do
           assertRevNE e  eu
 
         it "can pack and unpack plain git repos" $ do
-          withSystemTempDirectory "git-repo" $ \dir -> shelly_ $ do
+          shelly_ $ withSystemTempDirectory "git-repo" $ \dir -> do
             let repo = toTextIgnore $ dir </> ("repo" :: String)
-            run_ "git" ["clone", "https://git.haskell.org/packages/primitive.git", repo]
+            run_ "git" ["clone", "https://github.com/haskell/process.git", repo]
             origHash <- chdir (fromText repo) revParseHead
 
             run_ "ob" ["thunk", "pack", repo]
             packedFiles <- Set.fromList <$> ls (fromText repo)
-            liftIO $ assertEqual "" packedFiles $
-              Set.fromList $ (repo </>) <$> ["default.nix", "git.json", ".attr-cache" :: String]
+            liftIO $ assertEqual "" packedFiles $ Set.fromList $ (repo </>) <$>
+              ["default.nix", "github.json", ".attr-cache" :: String]
 
             run_ "ob" ["thunk", "unpack", repo]
             chdir (fromText repo) $ do
@@ -227,23 +227,23 @@ testObRunInDir mdir httpManager = handle_sh (\case ExitSuccess -> pure (); e -> 
 testThunkPack :: Shelly.FilePath -> Sh ()
 testThunkPack path' = withTempFile (T.unpack $ toTextIgnore path') "test-file" $ \file handle -> do
   let pack' = readProcessWithExitCode "ob" ["thunk", "pack", T.unpack $ toTextIgnore path'] ""
-      ensureThunkPackFails err = liftIO $ pack' >>= \case
-        (code, out, _err)
+      ensureThunkPackFails q = liftIO $ pack' >>= \case
+        (code, out, err)
           | code == ExitSuccess -> fail "ob thunk pack succeeded when it should have failed"
-          | err `T.isInfixOf` T.pack out -> pure ()
-          | otherwise -> fail $ "ob thunk pack failed for an unexpected reason: " <> show out
+          | q `T.isInfixOf` T.pack (out <> err) -> pure ()
+          | otherwise -> fail $ "ob thunk pack failed for an unexpected reason: " <> show out <> "\nstderr: " <> err
       git = chdir path' . run "git"
   -- Untracked files
-  ensureThunkPackFails "unsaved modifications"
+  ensureThunkPackFails "Untracked files"
   void $ git ["add", T.pack file]
   -- Uncommitted files (staged)
-  ensureThunkPackFails "unsaved modifications"
+  ensureThunkPackFails "unsaved"
   chdir path' $ commit "test commit"
   -- Non-pushed commits in any branch
   ensureThunkPackFails "not been pushed"
   -- Uncommitted files (unstaged)
   liftIO $ T.hPutStrLn handle "test file" >> hClose handle
-  ensureThunkPackFails "unsaved modifications"
+  ensureThunkPackFails "modified"
   -- Existing stashes
   void $ git ["stash"]
   ensureThunkPackFails "has stashes"
